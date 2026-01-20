@@ -2,6 +2,10 @@
 
 A Minecraft plugin for Paper/Spigot 1.21.1 that implements a special Elytra system with radius-based restrictions.
 
+---
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/I3I61SOC0C)
+
 ## What does this plugin do?
 
 This plugin creates a "OneWay Elytra" system where certain Elytras can only be used within a configurable radius around a spawn point. Normal Elytras work as usual and are not affected.
@@ -120,3 +124,4 @@ Checks if the Elytra in your hand is a OneWay Elytra.
 ## License
 
 This plugin was developed for private use.
+

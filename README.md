@@ -121,7 +121,5 @@ Checks if the Elytra in your hand is a OneWay Elytra.
 - Make sure the config file is saved as UTF-8
 - The build file is already configured for UTF-8
 
-## License
 
-This plugin was developed for private use.
 

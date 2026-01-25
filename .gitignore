@@ -13,3 +13,9 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Build outputs
+bin/
+build/
+*.class
+

@@ -1,0 +1,22 @@
+# OneWay Elytra Plugin Konfiguration
+
+# Spawn-Punkt (Welt + Koordinaten)
+spawn:
+  world: "world"
+  x: 0.0
+  y: 64.0
+  z: 0.0
+
+# Radius in Blöcken
+radius: 100
+
+# Entfernen-Modus: MOVE_TO_INVENTORY oder DROP
+removeMode: "MOVE_TO_INVENTORY"
+
+# Nachrichten
+messages:
+  denyGlide: "&cDu kannst hier nicht mit der OneWay Elytra gleiten!"
+  removedAfterLanding: "&cDie OneWay Elytra wurde entfernt, da du außerhalb des erlaubten Bereichs gelandet bist."
+
+# Debug-Modus (zeigt zusätzliche Informationen)
+debug: false

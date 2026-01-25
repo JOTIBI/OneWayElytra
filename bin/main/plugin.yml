@@ -1,0 +1,20 @@
+name: OneWayElytra
+version: '${project.version}'
+main: de.jotibi.onewayelytra.OneWayElytraPlugin
+api-version: '1.21'
+author: jotibi
+description: OneWay Elytra Plugin for Paper 1.21.1
+
+commands:
+  oe:
+    description: OneWay Elytra Verwaltung
+    usage: /<command> [subcommand]
+    aliases: [onewayelytra, oneway]
+
+permissions:
+  onewayelytra.admin:
+    description: Erlaubt alle Admin-Commands
+    default: op
+  onewayelytra.bypass:
+    description: Ignoriert alle OneWay Elytra Regeln
+    default: op

@@ -119,4 +119,25 @@ Checks if the Elytra in your hand is a OneWay Elytra.
 
 ## License
 
-This plugin was developed for private use.
+Copyright (c) 2026 JOTIBI
+
+Permission is hereby granted to use this software on any Minecraft server
+(private or public) and within modpacks.
+
+The following conditions apply:
+
+1. This software may NOT be sold, sublicensed, or monetized in any way,
+   either alone or as part of a bundle.
+2. Modification of the software is permitted for own server operation,
+   including public servers.
+3. Modified versions may NOT be published, distributed, uploaded, or
+   shared in any form.
+4. Redistribution of the original software is NOT permitted.
+5. When this software is used in modpacks, visible credit to the original
+   author must be provided (e.g. in the modpack listing, description,
+   or a README file).
+6. This copyright and license notice must not be removed or altered.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED.
+

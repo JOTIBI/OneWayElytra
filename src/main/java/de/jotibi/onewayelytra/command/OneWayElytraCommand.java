@@ -64,6 +64,8 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
                 return handleUntag(sender);
             case "check":
                 return handleCheck(sender);
+            case "debug":
+                return handleDebug(sender);
             default:
                 sendHelp(sender);
                 return true;
@@ -352,9 +354,33 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean handleDebug(CommandSender sender) {
+        if (!sender.hasPermission("onewayelytra.admin")) {
+            sendNoPermission(sender);
+            return true;
+        }
+
+        boolean currentDebug = configManager.isDebug();
+        boolean newDebug = !currentDebug;
+        
+        if (configManager.getConfig() == null) {
+            configManager.loadConfig();
+        }
+        configManager.getConfig().set("debug", newDebug);
+        configManager.saveConfig();
+        
+        if (newDebug) {
+            sender.sendMessage(languageManager.getComponent("command.debug_enabled"));
+        } else {
+            sender.sendMessage(languageManager.getComponent("command.debug_disabled"));
+        }
+
+        return true;
+    }
+
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(languageManager.getComponent("command.help_header"));
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 11; i++) {
             sender.sendMessage(languageManager.getComponent("command.help_" + i));
         }
     }
@@ -366,7 +392,7 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            List<String> subCommands = Arrays.asList("setspawn", "setradius", "setremovemode", "setlang", "info", "reload", "give", "tag", "untag", "check");
+            List<String> subCommands = Arrays.asList("setspawn", "setradius", "setremovemode", "setlang", "info", "reload", "give", "tag", "untag", "check", "debug");
             return subCommands.stream()
                 .filter(cmd -> cmd.startsWith(args[0].toLowerCase()))
                 .collect(Collectors.toList());

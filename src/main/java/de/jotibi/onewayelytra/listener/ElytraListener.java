@@ -68,8 +68,9 @@ public class ElytraListener implements Listener {
                         continue;
                     }
                     
-                    // Prüfe nur die Haupt-Inventar-Slots (0-35); Rüstungs-Slots sind nicht in getSize()
-                    for (int i = 0; i < player.getInventory().getSize(); i++) {
+                    // Prüfe nur die Haupt-Inventar-Slots (0-35), NICHT Armor-Slots (36-39) oder Offhand (40)
+                    // getSize() gibt 41 zurück, aber wir wollen nur 0-35!
+                    for (int i = 0; i < 36; i++) {
                         ItemStack item = player.getInventory().getItem(i);
                         if (!elytraTagService.isOneWayElytra(item)) {
                             continue;
@@ -466,11 +467,12 @@ public class ElytraListener implements Listener {
                 }
                 
                 // Prüfe nach dem Event, ob die Elytra trotzdem ins Inventar gelangt ist und lösche sie
+                // NUR Haupt-Inventar (0-35), NICHT Armor-Slots!
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        // Prüfe alle Inventar-Slots auf OneWay Elytras und lösche sie
-                        for (int i = 0; i < player.getInventory().getSize(); i++) {
+                        // Prüfe nur Haupt-Inventar-Slots (0-35) auf OneWay Elytras
+                        for (int i = 0; i < 36; i++) {
                             ItemStack item = player.getInventory().getItem(i);
                             if (elytraTagService.isOneWayElytra(item)) {
                                 if (debug) {

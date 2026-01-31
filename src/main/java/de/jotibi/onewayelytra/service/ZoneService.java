@@ -55,13 +55,17 @@ public class ZoneService {
         return within;
     }
 
+    /**
+     * Berechnet die horizontale Distanz² (nur X und Z, ignoriert Y/Höhe).
+     * So kann der Spieler beliebig hoch fliegen und bleibt trotzdem "im Radius".
+     */
     public double getDistanceSquared(Location loc1, Location loc2) {
         if (loc1 == null || loc2 == null) {
             return Double.MAX_VALUE;
         }
         double dx = loc1.getX() - loc2.getX();
-        double dy = loc1.getY() - loc2.getY();
         double dz = loc1.getZ() - loc2.getZ();
-        return dx * dx + dy * dy + dz * dz;
+        // Nur horizontale Distanz (X/Z), Y wird ignoriert
+        return dx * dx + dz * dz;
     }
 }

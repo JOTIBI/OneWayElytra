@@ -12,6 +12,7 @@ This plugin creates a "OneWay Elytra" system where certain Elytras can only be u
 - **Automatic Elytra management**: 
   - Players automatically receive a OneWay Elytra when entering the radius
   - The Elytra is automatically removed when players leave the radius (only when not gliding)
+  - Action bar warning when chestplate slot is occupied: "Remove your chestplate first to receive the OneWay Elytra!"
 - **Abuse prevention**: 
   - New gliding cannot be started outside the radius
   - Players already flying can continue their flight until landing
@@ -19,6 +20,10 @@ This plugin creates a "OneWay Elytra" system where certain Elytras can only be u
 - **Flexible removal modes**: 
   - `MOVE_TO_INVENTORY`: Elytra is moved to inventory (or dropped if full)
   - `DROP`: Elytra is immediately deleted (cannot be picked up)
+- **Multilingual support**: 
+  - German (de) and English (en) language files included
+  - All messages can be customized in `lang/de.yml` or `lang/en.yml`
+  - Config option `lang: de` or `lang: en` to switch languages
 
 ## Installation
 
@@ -32,7 +37,11 @@ This plugin creates a "OneWay Elytra" system where certain Elytras can only be u
 The configuration file is located at `plugins/OneWayElytra/config.yml`:
 
 ```yaml
-# Spawn point (World + coordinates)
+# OneWay Elytra Plugin configuration
+# Language: de = German, en = English (message files in plugin folder: lang/de.yml, lang/en.yml)
+lang: en
+
+# Spawn point (world + coordinates)
 spawn:
   world: "world"
   x: 0.0
@@ -42,17 +51,20 @@ spawn:
 # Radius in blocks
 radius: 100
 
-# Removal mode: MOVE_TO_INVENTORY or DROP
+# Remove mode when leaving zone: MOVE_TO_INVENTORY or DROP
 removeMode: "MOVE_TO_INVENTORY"
 
-# Messages
-messages:
-  denyGlide: "&cYou cannot glide here with the OneWay Elytra!"
-  removedAfterLanding: "&cThe OneWay Elytra was removed because you landed outside the allowed area."
-
-# Debug mode (shows additional information)
+# Debug mode (extra console output)
 debug: false
 ```
+
+### Language Files
+
+All player-facing messages are stored in language files:
+- `plugins/OneWayElytra/lang/de.yml` - German messages (default)
+- `plugins/OneWayElytra/lang/en.yml` - English messages
+
+These files are created automatically on first start and can be edited to customize messages. Use `&` for color codes (e.g., `&c` for red, `&a` for green).
 
 ## Commands
 
@@ -71,7 +83,7 @@ Changes the removal mode:
 Shows the current configuration (spawn point, radius, removal mode).
 
 ### `/oe reload`
-Reloads the configuration file.
+Reloads the configuration file and language files.
 
 ### `/oe give <player> [amount]`
 Gives a player one or multiple OneWay Elytras.

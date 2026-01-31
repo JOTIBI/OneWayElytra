@@ -13,7 +13,7 @@ import java.io.File;
  */
 public class LanguageManager {
 
-    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
     private final OneWayElytraPlugin plugin;
     private final ConfigManager configManager;
@@ -32,12 +32,12 @@ public class LanguageManager {
     public void loadLanguage() {
         String lang = configManager.getLanguage();
         if (lang == null || lang.isEmpty()) {
-            lang = "de";
+            lang = "en";
         }
         lang = lang.toLowerCase();
         if (!lang.equals("de") && !lang.equals("en")) {
-            plugin.getLogger().warning("Unknown language '" + lang + "', using 'de'");
-            lang = "de";
+            plugin.getLogger().warning("Unknown language '" + lang + "', using 'en'");
+            lang = "en";
         }
 
         File langFolder = new File(plugin.getDataFolder(), "lang");
@@ -55,9 +55,9 @@ public class LanguageManager {
 
         File langFile = new File(langFolder, lang + ".yml");
         if (!langFile.exists()) {
-            plugin.getLogger().warning("Language file " + lang + ".yml not found, using de");
-            lang = "de";
-            langFile = new File(langFolder, "de.yml");
+            plugin.getLogger().warning("Language file " + lang + ".yml not found, using en");
+            lang = "en";
+            langFile = new File(langFolder, "en.yml");
         }
 
         langConfig = YamlConfiguration.loadConfiguration(langFile);

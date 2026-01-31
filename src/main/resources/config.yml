@@ -1,6 +1,6 @@
 # OneWay Elytra Plugin configuration
 # Language: de = German, en = English (message files in plugin folder: lang/de.yml, lang/en.yml)
-lang: de
+lang: en
 
 # Spawn point (world + coordinates)
 spawn:

@@ -29,9 +29,9 @@ public class ConfigManager {
         // Dies verhindert, dass die Config beim Reload überschrieben wird
         if (!configExisted) {
             plugin.saveDefaultConfig();
-            plugin.getLogger().info("Config.yml wurde erstellt (existierte nicht)");
+            plugin.getLogger().info("Config.yml was created (did not exist before)");
         } else {
-            plugin.getLogger().info("Config.yml existiert bereits, wird geladen (nicht überschrieben)");
+            plugin.getLogger().info("Config.yml already exists, loading (not overwriting)");
         }
         
         // Reload lädt die existierende Config, überschreibt sie aber nicht
@@ -39,13 +39,13 @@ public class ConfigManager {
         config = plugin.getConfig();
         
         boolean debug = config.getBoolean("debug", false);
-        plugin.getLogger().info("Config geladen - Debug-Modus: " + (debug ? "AN" : "AUS"));
+        plugin.getLogger().info("Config loaded - Debug mode: " + (debug ? "ON" : "OFF"));
         
         if (debug) {
-            plugin.getLogger().info("[DEBUG] ===== DEBUG-MODUS AKTIVIERT =====");
-            plugin.getLogger().info("[DEBUG] Config-Datei existierte vorher: " + configExisted);
-            plugin.getLogger().info("[DEBUG] Config-Datei existiert jetzt: " + configFile.exists());
-            plugin.getLogger().info("[DEBUG] Config-Datei Pfad: " + configFile.getAbsolutePath());
+            plugin.getLogger().info("[DEBUG] ===== DEBUG MODE ACTIVATED =====");
+            plugin.getLogger().info("[DEBUG] Config file existed before: " + configExisted);
+            plugin.getLogger().info("[DEBUG] Config file exists now: " + configFile.exists());
+            plugin.getLogger().info("[DEBUG] Config file path: " + configFile.getAbsolutePath());
         }
     }
 
@@ -143,10 +143,10 @@ public class ConfigManager {
         if (config == null) {
             loadConfig();
             if (config == null) {
-                return "de";
+                return "en";
             }
         }
-        return config.getString("lang", "de");
+        return config.getString("lang", "en");
     }
 
     public boolean isDebug() {

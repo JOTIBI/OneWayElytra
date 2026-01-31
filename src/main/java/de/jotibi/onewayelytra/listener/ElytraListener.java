@@ -34,6 +34,10 @@ public class ElytraListener implements Listener {
     private final ZoneService zoneService;
     private final ElytraTagService elytraTagService;
     private final FlightTracker flightTracker;
+    
+    // Cooldown-Map: Verhindert sofortiges Wiedergeben nach Entfernung (Radius-Flackern)
+    private final java.util.Map<java.util.UUID, Long> elytraRemovalCooldown = new java.util.HashMap<>();
+    private static final long COOLDOWN_MS = 3000; // 3 Sekunden Cooldown
 
     public ElytraListener(OneWayElytraPlugin plugin, ConfigManager configManager,
                           LanguageManager languageManager, ZoneService zoneService,
@@ -390,21 +394,23 @@ public class ElytraListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (configManager.isDebug()) {
-            plugin.getLogger().info(String.format("[DEBUG] Player %s verlässt Server, lösche State", 
+            plugin.getLogger().info(String.format("[DEBUG] Player %s leaves server, clearing state", 
                 event.getPlayer().getName()));
         }
         flightTracker.clearState(event.getPlayer().getUniqueId());
+        elytraRemovalCooldown.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
         if (configManager.isDebug()) {
-            plugin.getLogger().info(String.format("[DEBUG] Player %s wechselt Welt (%s -> %s), lösche State", 
+            plugin.getLogger().info(String.format("[DEBUG] Player %s changes world (%s -> %s), clearing state", 
                 event.getPlayer().getName(),
                 event.getFrom().getName(),
                 event.getPlayer().getWorld().getName()));
         }
         flightTracker.clearState(event.getPlayer().getUniqueId());
+        elytraRemovalCooldown.remove(event.getPlayer().getUniqueId());
     }
 
     /** Prüft, ob der Gegenstand eine Elytra oder eine Chestplate ist (Chest-Slot). */
@@ -632,6 +638,17 @@ public class ElytraListener implements Listener {
         if (withinRadius) {
             // Spieler ist im Radius
             if (!hasOneWayElytra && !isGliding) {
+                // Prüfe Cooldown: Wurde die Elytra kürzlich entfernt? (verhindert Radius-Flackern)
+                Long lastRemoval = elytraRemovalCooldown.get(player.getUniqueId());
+                if (lastRemoval != null && System.currentTimeMillis() - lastRemoval < COOLDOWN_MS) {
+                    if (debug && tickCount % 100 == 0) {
+                        long remaining = COOLDOWN_MS - (System.currentTimeMillis() - lastRemoval);
+                        plugin.getLogger().info(String.format("[DEBUG] Player %s - Cooldown aktiv, noch %d ms", 
+                            player.getName(), remaining));
+                    }
+                    return;
+                }
+                
                 // Prüfe, ob der Spieler überhaupt IRGENDEINE Elytra trägt
                 boolean hasAnyElytra = chestplate != null && chestplate.getType() == Material.ELYTRA;
                 
@@ -662,6 +679,8 @@ public class ElytraListener implements Listener {
                 // gelöscht und es käme zu einer Endlosschleife (geben → löschen → erneut geben).
                 if (chestplate == null || chestplate.getType() == Material.AIR) {
                     player.getInventory().setChestplate(elytra);
+                    // Cooldown löschen, da erfolgreich gegeben
+                    elytraRemovalCooldown.remove(player.getUniqueId());
                     if (debug) {
                         plugin.getLogger().info(String.format("[DEBUG] ✓ OneWay Elytra automatisch an %s gegeben (Chest-Slot)", 
                             player.getName()));
@@ -698,6 +717,8 @@ public class ElytraListener implements Listener {
                             player.getName()));
                     }
                     removeElytra(player, chestplate);
+                    // Setze Cooldown, um Radius-Flackern zu verhindern
+                    elytraRemovalCooldown.put(player.getUniqueId(), System.currentTimeMillis());
                 } else {
                     if (debug && tickCount % 20 == 0) {
                         plugin.getLogger().info(String.format("[DEBUG] Player %s außerhalb Radius mit OneWay Elytra, aber nicht on ground - warte auf Landung", 

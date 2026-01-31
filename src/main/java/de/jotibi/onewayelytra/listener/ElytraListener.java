@@ -632,6 +632,23 @@ public class ElytraListener implements Listener {
         if (withinRadius) {
             // Spieler ist im Radius
             if (!hasOneWayElytra && !isGliding) {
+                // Prüfe, ob der Spieler überhaupt IRGENDEINE Elytra trägt
+                boolean hasAnyElytra = chestplate != null && chestplate.getType() == Material.ELYTRA;
+                
+                // Nur geben, wenn:
+                // 1. Spieler hat KEINE Elytra (weder OneWay noch normale)
+                // 2. ODER: Spieler hat normale Elytra (dann würde hasOneWayElytra false sein, aber hasAnyElytra true)
+                //    -> In diesem Fall NICHT geben, da eine normale Elytra schon da ist
+                
+                if (hasAnyElytra) {
+                    // Spieler trägt bereits eine normale Elytra -> nicht ersetzen
+                    if (debug && tickCount % 100 == 0) {
+                        plugin.getLogger().info(String.format("[DEBUG] Player %s trägt bereits eine normale Elytra - wird nicht ersetzt", 
+                            player.getName()));
+                    }
+                    return;
+                }
+                
                 // Spieler hat keine OneWay Elytra und gleitet nicht -> gebe Elytra
                 if (debug) {
                     plugin.getLogger().info(String.format("[DEBUG] ===== Player %s ist im Radius ohne OneWay Elytra - gebe Elytra =====", 
@@ -640,7 +657,7 @@ public class ElytraListener implements Listener {
                 
                 ItemStack elytra = elytraTagService.createOneWayElytra(1);
                 
-                // Nur geben, wenn der Chest-Slot frei ist. Ist er belegt (Chestplate/Elytra),
+                // Nur geben, wenn der Chest-Slot frei ist. Ist er belegt (Chestplate/normale Elytra),
                 // nicht ins Inventar legen – die OneWay Elytra würde dort sofort vom Cleanup-Task
                 // gelöscht und es käme zu einer Endlosschleife (geben → löschen → erneut geben).
                 if (chestplate == null || chestplate.getType() == Material.AIR) {
@@ -650,7 +667,10 @@ public class ElytraListener implements Listener {
                             player.getName()));
                     }
                 } else {
-                    player.sendActionBar(languageManager.getComponent("chestplate_slot_occupied"));
+                    // Nur alle 5 Sekunden Actionbar zeigen (nicht jede Sekunde)
+                    if (tickCount % 100 == 0) {
+                        player.sendActionBar(languageManager.getComponent("chestplate_slot_occupied"));
+                    }
                     if (debug) {
                         plugin.getLogger().info(String.format("[DEBUG] Chest-Slot belegt (%s) – OneWay Elytra wird nicht vergeben (würde sonst sofort gelöscht)", 
                             chestplate.getType().toString()));

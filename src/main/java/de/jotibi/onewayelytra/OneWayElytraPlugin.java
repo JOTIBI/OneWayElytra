@@ -25,10 +25,10 @@ public final class OneWayElytraPlugin extends JavaPlugin {
     public void onEnable() {
         instance = this;
         
-        getLogger().info("OneWay Elytra Plugin wird geladen...");
+        getLogger().info("OneWay Elytra Plugin is loading...");
         
         oneWayKey = new NamespacedKey(this, "oneway");
-        getLogger().info("NamespacedKey erstellt: " + oneWayKey);
+        getLogger().info("NamespacedKey created: " + oneWayKey);
         
         configManager = new ConfigManager(this);
         configManager.loadConfig();
@@ -37,14 +37,14 @@ public final class OneWayElytraPlugin extends JavaPlugin {
 
         boolean debug = configManager.isDebug();
         if (debug) {
-            getLogger().info("[DEBUG] ===== DEBUG-MODUS AKTIVIERT =====");
+            getLogger().info("[DEBUG] ===== DEBUG MODE ACTIVATED =====");
             Location spawn = configManager.getSpawnLocation();
             if (spawn != null) {
                 getLogger().info(String.format("[DEBUG] Spawn: %s @ %.1f, %.1f, %.1f, Radius: %d", 
                     spawn.getWorld().getName(), spawn.getX(), spawn.getY(), spawn.getZ(), 
                     configManager.getRadius()));
             } else {
-                getLogger().warning("[DEBUG] Spawn Location ist null!");
+                getLogger().warning("[DEBUG] Spawn Location is null!");
             }
         }
         
@@ -53,7 +53,7 @@ public final class OneWayElytraPlugin extends JavaPlugin {
         flightTracker = new FlightTracker();
         
         if (debug) {
-            getLogger().info("[DEBUG] Services initialisiert");
+            getLogger().info("[DEBUG] Services initialized");
         }
         
         OneWayElytraCommand commandHandler = new OneWayElytraCommand(this, configManager, languageManager, elytraTagService);
@@ -62,10 +62,10 @@ public final class OneWayElytraPlugin extends JavaPlugin {
             command.setExecutor(commandHandler);
             command.setTabCompleter(commandHandler);
             if (debug) {
-                getLogger().info("[DEBUG] Command 'oe' registriert");
+                getLogger().info("[DEBUG] Command 'oe' registered");
             }
         } else {
-            getLogger().severe("Command 'oe' nicht in plugin.yml gefunden!");
+            getLogger().severe("Command 'oe' not found in plugin.yml!");
         }
         
         getServer().getPluginManager().registerEvents(
@@ -74,19 +74,18 @@ public final class OneWayElytraPlugin extends JavaPlugin {
         );
         
         if (debug) {
-            getLogger().info("[DEBUG] Event Listener registriert");
-            getLogger().info("[DEBUG] ===== Plugin vollständig geladen =====");
+            getLogger().info("[DEBUG] Event Listener registered");
+            getLogger().info("[DEBUG] ===== Plugin fully loaded =====");
         }
         
-        getLogger().info("OneWay Elytra Plugin wurde erfolgreich geladen!");
+        getLogger().info("OneWay Elytra Plugin was successfully loaded!");
     }
 
     @Override
     public void onDisable() {
-        if (configManager != null) {
-            configManager.saveConfig();
-        }
-        getLogger().info("OneWay Elytra Plugin wurde entladen!");
+        // Config wird automatisch beim Setzen von Werten gespeichert (setSpawnLocation, setRadius, etc.)
+        // Wir müssen sie NICHT beim onDisable speichern, da das die Config überschreibt
+        getLogger().info("OneWay Elytra Plugin was unloaded!");
     }
 
     public static OneWayElytraPlugin getInstance() {

@@ -49,6 +49,9 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
                 return handleSetRadius(sender, args);
             case "setremovemode":
                 return handleSetRemoveMode(sender, args);
+            case "setlang":
+            case "setlanguage":
+                return handleSetLanguage(sender, args);
             case "info":
                 return handleInfo(sender);
             case "reload":
@@ -161,6 +164,42 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
 
         if (configManager.isDebug()) {
             plugin.getLogger().info("Remove-Modus gesetzt: " + modeStr);
+        }
+
+        return true;
+    }
+
+    private boolean handleSetLanguage(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("onewayelytra.admin")) {
+            sendNoPermission(sender);
+            return true;
+        }
+
+        if (args.length < 2) {
+            sender.sendMessage(languageManager.getComponent("command.setlang_usage"));
+            sender.sendMessage(languageManager.getComponent("command.setlang_current", languageManager.getCurrentLanguage()));
+            return true;
+        }
+
+        String lang = args[1].toLowerCase();
+        if (!lang.equals("de") && !lang.equals("en")) {
+            sender.sendMessage(languageManager.getComponent("command.setlang_invalid", args[1]));
+            sender.sendMessage(languageManager.getComponent("command.setlang_options"));
+            return true;
+        }
+
+        if (configManager.getConfig() == null) {
+            configManager.loadConfig();
+        }
+        configManager.getConfig().set("lang", lang);
+        configManager.saveConfig();
+        
+        languageManager.loadLanguage();
+        
+        sender.sendMessage(languageManager.getComponent("command.setlang_success", lang));
+
+        if (configManager.isDebug()) {
+            plugin.getLogger().info("Language set to: " + lang);
         }
 
         return true;
@@ -315,7 +354,7 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
 
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(languageManager.getComponent("command.help_header"));
-        for (int i = 1; i <= 9; i++) {
+        for (int i = 1; i <= 10; i++) {
             sender.sendMessage(languageManager.getComponent("command.help_" + i));
         }
     }
@@ -327,7 +366,7 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            List<String> subCommands = Arrays.asList("setspawn", "setradius", "setremovemode", "info", "reload", "give", "tag", "untag", "check");
+            List<String> subCommands = Arrays.asList("setspawn", "setradius", "setremovemode", "setlang", "info", "reload", "give", "tag", "untag", "check");
             return subCommands.stream()
                 .filter(cmd -> cmd.startsWith(args[0].toLowerCase()))
                 .collect(Collectors.toList());
@@ -343,6 +382,11 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
             if (args[0].equalsIgnoreCase("setremovemode")) {
                 return Arrays.asList("MOVE_TO_INVENTORY", "DROP").stream()
                     .filter(mode -> mode.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .collect(Collectors.toList());
+            }
+            if (args[0].equalsIgnoreCase("setlang") || args[0].equalsIgnoreCase("setlanguage")) {
+                return Arrays.asList("de", "en").stream()
+                    .filter(lang -> lang.startsWith(args[1].toLowerCase()))
                     .collect(Collectors.toList());
             }
         }

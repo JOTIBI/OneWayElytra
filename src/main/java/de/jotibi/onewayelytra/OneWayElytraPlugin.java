@@ -2,6 +2,7 @@ package de.jotibi.onewayelytra;
 
 import de.jotibi.onewayelytra.command.OneWayElytraCommand;
 import de.jotibi.onewayelytra.config.ConfigManager;
+import de.jotibi.onewayelytra.config.LanguageManager;
 import de.jotibi.onewayelytra.listener.ElytraListener;
 import de.jotibi.onewayelytra.service.ElytraTagService;
 import de.jotibi.onewayelytra.service.FlightTracker;
@@ -15,6 +16,7 @@ public final class OneWayElytraPlugin extends JavaPlugin {
     private static OneWayElytraPlugin instance;
     private NamespacedKey oneWayKey;
     private ConfigManager configManager;
+    private LanguageManager languageManager;
     private ZoneService zoneService;
     private ElytraTagService elytraTagService;
     private FlightTracker flightTracker;
@@ -30,7 +32,9 @@ public final class OneWayElytraPlugin extends JavaPlugin {
         
         configManager = new ConfigManager(this);
         configManager.loadConfig();
-        
+        languageManager = new LanguageManager(this, configManager);
+        languageManager.loadLanguage();
+
         boolean debug = configManager.isDebug();
         if (debug) {
             getLogger().info("[DEBUG] ===== DEBUG-MODUS AKTIVIERT =====");
@@ -52,7 +56,7 @@ public final class OneWayElytraPlugin extends JavaPlugin {
             getLogger().info("[DEBUG] Services initialisiert");
         }
         
-        OneWayElytraCommand commandHandler = new OneWayElytraCommand(this, configManager, elytraTagService);
+        OneWayElytraCommand commandHandler = new OneWayElytraCommand(this, configManager, languageManager, elytraTagService);
         org.bukkit.command.PluginCommand command = getCommand("oe");
         if (command != null) {
             command.setExecutor(commandHandler);
@@ -65,7 +69,7 @@ public final class OneWayElytraPlugin extends JavaPlugin {
         }
         
         getServer().getPluginManager().registerEvents(
-            new ElytraListener(this, configManager, zoneService, elytraTagService, flightTracker),
+            new ElytraListener(this, configManager, languageManager, zoneService, elytraTagService, flightTracker),
             this
         );
         
@@ -95,6 +99,10 @@ public final class OneWayElytraPlugin extends JavaPlugin {
 
     public ConfigManager getConfigManager() {
         return configManager;
+    }
+
+    public LanguageManager getLanguageManager() {
+        return languageManager;
     }
 
     public ZoneService getZoneService() {

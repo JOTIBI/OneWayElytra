@@ -2,11 +2,10 @@ package de.jotibi.onewayelytra.listener;
 
 import de.jotibi.onewayelytra.OneWayElytraPlugin;
 import de.jotibi.onewayelytra.config.ConfigManager;
+import de.jotibi.onewayelytra.config.LanguageManager;
 import de.jotibi.onewayelytra.service.ElytraTagService;
 import de.jotibi.onewayelytra.service.FlightTracker;
 import de.jotibi.onewayelytra.service.ZoneService;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -22,6 +21,7 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.UUID;
@@ -30,15 +30,17 @@ public class ElytraListener implements Listener {
 
     private final OneWayElytraPlugin plugin;
     private final ConfigManager configManager;
+    private final LanguageManager languageManager;
     private final ZoneService zoneService;
     private final ElytraTagService elytraTagService;
     private final FlightTracker flightTracker;
 
     public ElytraListener(OneWayElytraPlugin plugin, ConfigManager configManager,
-                          ZoneService zoneService, ElytraTagService elytraTagService,
-                          FlightTracker flightTracker) {
+                          LanguageManager languageManager, ZoneService zoneService,
+                          ElytraTagService elytraTagService, FlightTracker flightTracker) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.languageManager = languageManager;
         this.zoneService = zoneService;
         this.elytraTagService = elytraTagService;
         this.flightTracker = flightTracker;
@@ -62,21 +64,22 @@ public class ElytraListener implements Listener {
                         continue;
                     }
                     
-                    // Prüfe alle Inventar-Slots (außer Chestplate-Slot) auf OneWay Elytras
+                    // Prüfe nur die Haupt-Inventar-Slots (0-35); Rüstungs-Slots sind nicht in getSize()
                     for (int i = 0; i < player.getInventory().getSize(); i++) {
-                        // Überspringe den Chestplate-Slot (38), da dieser separat gehandhabt wird
-                        if (i == 38) {
+                        ItemStack item = player.getInventory().getItem(i);
+                        if (!elytraTagService.isOneWayElytra(item)) {
                             continue;
                         }
-                        
-                        ItemStack item = player.getInventory().getItem(i);
-                        if (elytraTagService.isOneWayElytra(item)) {
-                            if (debug) {
-                                plugin.getLogger().info(String.format("[DEBUG] OneWay Elytra im Inventar von %s gefunden (Slot %d) - lösche", 
-                                    player.getName(), i));
-                            }
-                            player.getInventory().setItem(i, null);
+                        // Kurz vor dem Löschen erneut prüfen, um Race mit Spieler-Aktionen zu vermeiden
+                        ItemStack current = player.getInventory().getItem(i);
+                        if (!elytraTagService.isOneWayElytra(current)) {
+                            continue;
                         }
+                        if (debug) {
+                            plugin.getLogger().info(String.format("[DEBUG] OneWay Elytra im Inventar von %s gefunden (Slot %d) - lösche", 
+                                player.getName(), i));
+                        }
+                        player.getInventory().setItem(i, null);
                     }
                 }
             }
@@ -141,10 +144,7 @@ public class ElytraListener implements Listener {
                             player.getName()));
                     }
                     removeElytra(player, chestplate);
-                    String message = configManager.getRemovedAfterLandingMessage();
-                    // Entferne Color-Codes und verwende NamedTextColor stattdessen
-                    String cleanMessage = message.replace("&c", "").replace("&r", "").replace("&", "");
-                    player.sendMessage(Component.text(cleanMessage, NamedTextColor.RED));
+                    player.sendMessage(languageManager.getComponent("removed_after_landing"));
                 }
             }
             return;
@@ -194,11 +194,7 @@ public class ElytraListener implements Listener {
 
         if (!withinRadius) {
             event.setCancelled(true);
-            
-            String message = configManager.getDenyGlideMessage();
-            // Entferne Color-Codes und verwende NamedTextColor stattdessen
-            String cleanMessage = message.replace("&c", "").replace("&r", "").replace("&", "");
-            player.sendActionBar(Component.text(cleanMessage, NamedTextColor.RED));
+            player.sendActionBar(languageManager.getComponent("deny_glide"));
 
             if (debug) {
                 plugin.getLogger().info(String.format("[DEBUG] Glide-Start blockiert für %s (außerhalb Radius)", 
@@ -293,9 +289,7 @@ public class ElytraListener implements Listener {
                             }
                             
                             removeElytra(player, chestplate);
-                            
-                            String message = configManager.getRemovedAfterLandingMessage();
-                            player.sendMessage(Component.text(message.replace("&", "§"), NamedTextColor.RED));
+                            player.sendMessage(languageManager.getComponent("removed_after_landing"));
 
                             if (configManager.isDebug()) {
                                 plugin.getLogger().info(String.format("[DEBUG] OneWay Elytra entfernt von %s (außerhalb Radius nach Landung)", 
@@ -413,6 +407,14 @@ public class ElytraListener implements Listener {
         flightTracker.clearState(event.getPlayer().getUniqueId());
     }
 
+    /** Prüft, ob der Gegenstand eine Elytra oder eine Chestplate ist (Chest-Slot). */
+    private static boolean isChestplateOrElytra(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) {
+            return true;
+        }
+        return item.getType() == Material.ELYTRA || item.getType().name().endsWith("_CHESTPLATE");
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) {
@@ -427,11 +429,18 @@ public class ElytraListener implements Listener {
 
         boolean debug = configManager.isDebug();
         
-        // Prüfe, ob eine OneWay Elytra aus dem Chestplate-Slot entfernt wird
-        // Slot 38 ist der Chestplate-Slot im Player Inventory
-        if (event.getSlotType() == InventoryType.SlotType.ARMOR && event.getSlot() == 38) {
-            ItemStack clickedItem = event.getCurrentItem();
-            if (elytraTagService.isOneWayElytra(clickedItem)) {
+        // Nur reagieren, wenn das Spieler-Inventar angeklickt wurde (nicht z.B. Crafting-Tisch)
+        if (!(event.getClickedInventory() instanceof PlayerInventory) || event.getClickedInventory().getHolder() != player) {
+            return;
+        }
+        // Chestplate-Slot erkennen: ARMOR-Slot mit Elytra oder Chestplate (nicht Helm/Boots/Leggings)
+        boolean isChestplateSlot = event.getSlotType() == InventoryType.SlotType.ARMOR && isChestplateOrElytra(event.getCurrentItem());
+        if (!isChestplateSlot) {
+            return;
+        }
+        
+        ItemStack clickedItem = event.getCurrentItem();
+        if (elytraTagService.isOneWayElytra(clickedItem)) {
                 // OneWay Elytra wird aus dem Chestplate-Slot entfernt - lösche sie sofort
                 if (debug) {
                     plugin.getLogger().info(String.format("[DEBUG] Player %s entfernt OneWay Elytra aus Chestplate-Slot - lösche sofort", 
@@ -488,10 +497,9 @@ public class ElytraListener implements Listener {
                             player.getName()));
                     }
                     event.setCancelled(true);
-                    player.sendActionBar(Component.text("Du kannst die OneWay Elytra hier nicht anziehen!", NamedTextColor.RED));
+                    player.sendActionBar(languageManager.getComponent("deny_equip"));
                 }
             }
-        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -523,7 +531,7 @@ public class ElytraListener implements Listener {
                             player.getName()));
                     }
                     event.setCancelled(true);
-                    player.sendActionBar(Component.text("Du kannst die OneWay Elytra hier nicht anziehen!", NamedTextColor.RED));
+                    player.sendActionBar(languageManager.getComponent("deny_equip"));
                 }
             }
         }
@@ -632,7 +640,9 @@ public class ElytraListener implements Listener {
                 
                 ItemStack elytra = elytraTagService.createOneWayElytra(1);
                 
-                // Prüfe ob Chest-Slot frei ist
+                // Nur geben, wenn der Chest-Slot frei ist. Ist er belegt (Chestplate/Elytra),
+                // nicht ins Inventar legen – die OneWay Elytra würde dort sofort vom Cleanup-Task
+                // gelöscht und es käme zu einer Endlosschleife (geben → löschen → erneut geben).
                 if (chestplate == null || chestplate.getType() == Material.AIR) {
                     player.getInventory().setChestplate(elytra);
                     if (debug) {
@@ -640,27 +650,10 @@ public class ElytraListener implements Listener {
                             player.getName()));
                     }
                 } else {
-                    // Chest-Slot ist belegt, versuche ins Inventar zu geben
+                    player.sendActionBar(languageManager.getComponent("chestplate_slot_occupied"));
                     if (debug) {
-                        plugin.getLogger().info(String.format("[DEBUG] Chest-Slot belegt (%s), versuche ins Inventar zu geben", 
+                        plugin.getLogger().info(String.format("[DEBUG] Chest-Slot belegt (%s) – OneWay Elytra wird nicht vergeben (würde sonst sofort gelöscht)", 
                             chestplate.getType().toString()));
-                    }
-                    java.util.Map<Integer, ItemStack> remainingItems = player.getInventory().addItem(elytra);
-                    if (remainingItems.isEmpty()) {
-                        if (debug) {
-                            plugin.getLogger().info(String.format("[DEBUG] ✓ OneWay Elytra automatisch ins Inventar von %s gegeben", 
-                                player.getName()));
-                        }
-                    } else {
-                        // Inventar voll, droppe Elytra und lösche sie sofort (nicht aufsammelbar)
-                        org.bukkit.entity.Item droppedItem = player.getWorld().dropItemNaturally(player.getLocation(), elytra);
-                        if (droppedItem != null) {
-                            droppedItem.remove();
-                            if (debug) {
-                                plugin.getLogger().info(String.format("[DEBUG] ✓ OneWay Elytra bei %s gedroppt und sofort gelöscht (Inventar voll)", 
-                                    player.getName()));
-                            }
-                        }
                     }
                 }
             } else {

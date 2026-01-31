@@ -136,25 +136,17 @@ public class ConfigManager {
         }
     }
 
-    public String getDenyGlideMessage() {
+    /**
+     * Returns the language code (de or en) from config.
+     */
+    public String getLanguage() {
         if (config == null) {
             loadConfig();
             if (config == null) {
-                return "&cDu kannst hier nicht mit der OneWay Elytra gleiten!";
+                return "de";
             }
         }
-        return config.getString("messages.denyGlide", "&cDu kannst hier nicht mit der OneWay Elytra gleiten!");
-    }
-
-    public String getRemovedAfterLandingMessage() {
-        if (config == null) {
-            loadConfig();
-            if (config == null) {
-                return "&cDie OneWay Elytra wurde entfernt, da du außerhalb des erlaubten Bereichs gelandet bist.";
-            }
-        }
-        return config.getString("messages.removedAfterLanding", 
-            "&cDie OneWay Elytra wurde entfernt, da du außerhalb des erlaubten Bereichs gelandet bist.");
+        return config.getString("lang", "de");
     }
 
     public boolean isDebug() {

@@ -2,9 +2,8 @@ package de.jotibi.onewayelytra.command;
 
 import de.jotibi.onewayelytra.OneWayElytraPlugin;
 import de.jotibi.onewayelytra.config.ConfigManager;
+import de.jotibi.onewayelytra.config.LanguageManager;
 import de.jotibi.onewayelytra.service.ElytraTagService;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -23,12 +22,14 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
 
     private final OneWayElytraPlugin plugin;
     private final ConfigManager configManager;
+    private final LanguageManager languageManager;
     private final ElytraTagService elytraTagService;
 
     public OneWayElytraCommand(OneWayElytraPlugin plugin, ConfigManager configManager,
-                               ElytraTagService elytraTagService) {
+                               LanguageManager languageManager, ElytraTagService elytraTagService) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.languageManager = languageManager;
         this.elytraTagService = elytraTagService;
     }
 
@@ -73,23 +74,21 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Dieser Befehl kann nur von Spielern ausgeführt werden!", NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.player_only"));
             return true;
         }
 
         Player player = (Player) sender;
         Location location = player.getLocation();
         if (location.getWorld() == null) {
-            player.sendMessage(Component.text("Fehler: Welt nicht gefunden!", NamedTextColor.RED));
+            player.sendMessage(languageManager.getComponent("command.world_not_found"));
             return true;
         }
         
         configManager.setSpawnLocation(location);
-
-        player.sendMessage(Component.text("Spawn-Punkt wurde auf deine aktuelle Position gesetzt: ", NamedTextColor.GREEN)
-            .append(Component.text(String.format("%s (%.1f, %.1f, %.1f)", 
-                location.getWorld().getName(), location.getX(), location.getY(), location.getZ()), 
-                NamedTextColor.YELLOW)));
+        String pos = String.format("%s (%.1f, %.1f, %.1f)",
+            location.getWorld().getName(), location.getX(), location.getY(), location.getZ());
+        player.sendMessage(languageManager.getComponent("command.setspawn_success", pos));
 
         if (configManager.isDebug()) {
             plugin.getLogger().info(String.format("Spawn gesetzt: %s @ %.1f, %.1f, %.1f",
@@ -106,21 +105,19 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(Component.text("Verwendung: /oe setradius <blocks>", NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.setradius_usage"));
             return true;
         }
 
         try {
             int radius = Integer.parseInt(args[1]);
             if (radius < 0) {
-                sender.sendMessage(Component.text("Der Radius muss positiv sein!", NamedTextColor.RED));
+                sender.sendMessage(languageManager.getComponent("command.setradius_positive"));
                 return true;
             }
 
             configManager.setRadius(radius);
-            sender.sendMessage(Component.text("Radius wurde auf ", NamedTextColor.GREEN)
-                .append(Component.text(radius + " Blöcke", NamedTextColor.YELLOW))
-                .append(Component.text(" gesetzt.")));
+            sender.sendMessage(languageManager.getComponent("command.setradius_success", String.valueOf(radius)));
 
             if (configManager.isDebug()) {
                 plugin.getLogger().info("Radius gesetzt: " + radius);
@@ -128,7 +125,7 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
 
             return true;
         } catch (NumberFormatException e) {
-            sender.sendMessage(Component.text("Ungültige Zahl: " + args[1], NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.setradius_invalid", args[1]));
             return true;
         }
     }
@@ -140,32 +137,27 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(Component.text("Verwendung: /oe setremovemode <MOVE_TO_INVENTORY|DROP>", NamedTextColor.RED));
-            sender.sendMessage(Component.text("Aktueller Modus: ", NamedTextColor.GRAY)
-                .append(Component.text(configManager.getRemoveMode().name(), NamedTextColor.YELLOW)));
+            sender.sendMessage(languageManager.getComponent("command.setremovemode_usage"));
+            sender.sendMessage(languageManager.getComponent("command.setremovemode_current", configManager.getRemoveMode().name()));
             return true;
         }
 
         String modeStr = args[1].toUpperCase();
         try {
-            // Validiere den Modus
             ConfigManager.RemoveMode.valueOf(modeStr);
         } catch (IllegalArgumentException e) {
-            sender.sendMessage(Component.text("Ungültiger Modus: " + args[1], NamedTextColor.RED));
-            sender.sendMessage(Component.text("Verfügbare Modi: MOVE_TO_INVENTORY, DROP", NamedTextColor.YELLOW));
+            sender.sendMessage(languageManager.getComponent("command.setremovemode_invalid", args[1]));
+            sender.sendMessage(languageManager.getComponent("command.setremovemode_options"));
             return true;
         }
 
-        // Setze den Modus in der Config
         if (configManager.getConfig() == null) {
             configManager.loadConfig();
         }
         configManager.getConfig().set("removeMode", modeStr);
         configManager.saveConfig();
         
-        sender.sendMessage(Component.text("Remove-Modus wurde auf ", NamedTextColor.GREEN)
-            .append(Component.text(modeStr, NamedTextColor.YELLOW))
-            .append(Component.text(" gesetzt.")));
+        sender.sendMessage(languageManager.getComponent("command.setremovemode_success", modeStr));
 
         if (configManager.isDebug()) {
             plugin.getLogger().info("Remove-Modus gesetzt: " + modeStr);
@@ -182,22 +174,18 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
 
         Location spawn = configManager.getSpawnLocation();
         if (spawn == null || spawn.getWorld() == null) {
-            sender.sendMessage(Component.text("Fehler: Spawn-Punkt nicht konfiguriert!", NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.info_no_spawn"));
             return true;
         }
         
         int radius = configManager.getRadius();
+        String spawnStr = String.format("%.1f, %.1f, %.1f", spawn.getX(), spawn.getY(), spawn.getZ());
 
-        sender.sendMessage(Component.text("=== OneWay Elytra Info ===", NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("Welt: ", NamedTextColor.GRAY)
-            .append(Component.text(spawn.getWorld().getName(), NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text("Spawn: ", NamedTextColor.GRAY)
-            .append(Component.text(String.format("%.1f, %.1f, %.1f", 
-                spawn.getX(), spawn.getY(), spawn.getZ()), NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text("Radius: ", NamedTextColor.GRAY)
-            .append(Component.text(radius + " Blöcke", NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text("Remove-Modus: ", NamedTextColor.GRAY)
-            .append(Component.text(configManager.getRemoveMode().name(), NamedTextColor.WHITE)));
+        sender.sendMessage(languageManager.getComponent("command.info_header"));
+        sender.sendMessage(languageManager.getComponent("command.info_world", spawn.getWorld().getName()));
+        sender.sendMessage(languageManager.getComponent("command.info_spawn", spawnStr));
+        sender.sendMessage(languageManager.getComponent("command.info_radius", String.valueOf(radius)));
+        sender.sendMessage(languageManager.getComponent("command.info_removemode", configManager.getRemoveMode().name()));
 
         return true;
     }
@@ -209,7 +197,8 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         }
 
         configManager.loadConfig();
-        sender.sendMessage(Component.text("Config wurde neu geladen!", NamedTextColor.GREEN));
+        languageManager.loadLanguage();
+        sender.sendMessage(languageManager.getComponent("command.reload_success"));
         return true;
     }
 
@@ -220,13 +209,13 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(Component.text("Verwendung: /oe give <player> [amount]", NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.give_usage"));
             return true;
         }
 
         Player target = plugin.getServer().getPlayer(args[1]);
         if (target == null) {
-            sender.sendMessage(Component.text("Spieler nicht gefunden: " + args[1], NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.give_player_not_found", args[1]));
             return true;
         }
 
@@ -235,11 +224,11 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
             try {
                 amount = Integer.parseInt(args[2]);
                 if (amount < 1 || amount > 64) {
-                    sender.sendMessage(Component.text("Anzahl muss zwischen 1 und 64 sein!", NamedTextColor.RED));
+                    sender.sendMessage(languageManager.getComponent("command.give_amount_range"));
                     return true;
                 }
             } catch (NumberFormatException e) {
-                sender.sendMessage(Component.text("Ungültige Anzahl: " + args[2], NamedTextColor.RED));
+                sender.sendMessage(languageManager.getComponent("command.give_invalid_amount", args[2]));
                 return true;
             }
         }
@@ -247,9 +236,7 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         ItemStack elytra = elytraTagService.createOneWayElytra(amount);
         target.getInventory().addItem(elytra);
 
-        sender.sendMessage(Component.text("OneWay Elytra wurde an ", NamedTextColor.GREEN)
-            .append(Component.text(target.getName(), NamedTextColor.YELLOW))
-            .append(Component.text(" gegeben.")));
+        sender.sendMessage(languageManager.getComponent("command.give_success", target.getName()));
 
         return true;
     }
@@ -261,7 +248,7 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Dieser Befehl kann nur von Spielern ausgeführt werden!", NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.player_only"));
             return true;
         }
 
@@ -269,12 +256,12 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         ItemStack item = player.getInventory().getItemInMainHand();
 
         if (item == null || item.getType() != Material.ELYTRA) {
-            player.sendMessage(Component.text("Du musst eine Elytra in der Hand halten!", NamedTextColor.RED));
+            player.sendMessage(languageManager.getComponent("command.tag_hold_elytra"));
             return true;
         }
 
         elytraTagService.tagElytra(item);
-        player.sendMessage(Component.text("Elytra wurde als OneWay Elytra markiert!", NamedTextColor.GREEN));
+        player.sendMessage(languageManager.getComponent("command.tag_success"));
         return true;
     }
 
@@ -285,7 +272,7 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Dieser Befehl kann nur von Spielern ausgeführt werden!", NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.player_only"));
             return true;
         }
 
@@ -293,18 +280,18 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         ItemStack item = player.getInventory().getItemInMainHand();
 
         if (item == null || item.getType() != Material.ELYTRA) {
-            player.sendMessage(Component.text("Du musst eine Elytra in der Hand halten!", NamedTextColor.RED));
+            player.sendMessage(languageManager.getComponent("command.untag_hold_elytra"));
             return true;
         }
 
         elytraTagService.untagElytra(item);
-        player.sendMessage(Component.text("OneWay Elytra Markierung wurde entfernt!", NamedTextColor.GREEN));
+        player.sendMessage(languageManager.getComponent("command.untag_success"));
         return true;
     }
 
     private boolean handleCheck(CommandSender sender) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Dieser Befehl kann nur von Spielern ausgeführt werden!", NamedTextColor.RED));
+            sender.sendMessage(languageManager.getComponent("command.player_only"));
             return true;
         }
 
@@ -312,35 +299,29 @@ public class OneWayElytraCommand implements CommandExecutor, TabCompleter {
         ItemStack item = player.getInventory().getItemInMainHand();
 
         if (item == null || item.getType() != Material.ELYTRA) {
-            player.sendMessage(Component.text("Du musst eine Elytra in der Hand halten!", NamedTextColor.RED));
+            player.sendMessage(languageManager.getComponent("command.check_hold_elytra"));
             return true;
         }
 
         boolean isOneWay = elytraTagService.isOneWayElytra(item);
         if (isOneWay) {
-            player.sendMessage(Component.text("Diese Elytra ist eine OneWay Elytra!", NamedTextColor.GREEN));
+            player.sendMessage(languageManager.getComponent("command.check_is_oneway"));
         } else {
-            player.sendMessage(Component.text("Diese Elytra ist keine OneWay Elytra.", NamedTextColor.GRAY));
+            player.sendMessage(languageManager.getComponent("command.check_not_oneway"));
         }
 
         return true;
     }
 
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(Component.text("=== OneWay Elytra Commands ===", NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("/oe setspawn - Setzt den Spawn-Punkt", NamedTextColor.YELLOW));
-        sender.sendMessage(Component.text("/oe setradius <blocks> - Setzt den Radius", NamedTextColor.YELLOW));
-        sender.sendMessage(Component.text("/oe setremovemode <MOVE_TO_INVENTORY|DROP> - Setzt den Remove-Modus", NamedTextColor.YELLOW));
-        sender.sendMessage(Component.text("/oe info - Zeigt aktuelle Einstellungen", NamedTextColor.YELLOW));
-        sender.sendMessage(Component.text("/oe reload - Lädt die Config neu", NamedTextColor.YELLOW));
-        sender.sendMessage(Component.text("/oe give <player> [amount] - Gibt OneWay Elytra", NamedTextColor.YELLOW));
-        sender.sendMessage(Component.text("/oe tag - Markiert Elytra in der Hand", NamedTextColor.YELLOW));
-        sender.sendMessage(Component.text("/oe untag - Entfernt Markierung von Elytra", NamedTextColor.YELLOW));
-        sender.sendMessage(Component.text("/oe check - Prüft ob Elytra getaggt ist", NamedTextColor.YELLOW));
+        sender.sendMessage(languageManager.getComponent("command.help_header"));
+        for (int i = 1; i <= 9; i++) {
+            sender.sendMessage(languageManager.getComponent("command.help_" + i));
+        }
     }
 
     private void sendNoPermission(CommandSender sender) {
-        sender.sendMessage(Component.text("Du hast keine Berechtigung für diesen Befehl!", NamedTextColor.RED));
+        sender.sendMessage(languageManager.getComponent("command.no_permission"));
     }
 
     @Override
